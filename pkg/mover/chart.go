@@ -173,6 +173,8 @@ func NewChartMover(req *ChartMoveRequest, opts ...Option) (*ChartMover, error) {
 		return nil, err
 	}
 
+	validateChartValues(cm.chart)
+
 	if req.Target.Chart.IntermediateBundle != nil {
 		cm.targetIntermediateTarPath = req.Target.Chart.IntermediateBundle.Path
 	} else if req.Target.Chart.Local != nil {
@@ -435,7 +437,7 @@ func namespacedPath(fullpath, chartName string) string {
 }
 
 /*
-  Move performs the relocation.
+	Move performs the relocation.
 
 A regular move executes the Chart relocation which includes
 - Push all the images to their new locations
@@ -782,4 +784,13 @@ func newContainerRegistryClient(auth *ContainersAuth) (*internal.ContainerRegist
 	}
 
 	return internal.NewContainerRegistryClient(keychain), nil
+}
+
+func validateChartValues(c *chart.Chart) {
+	if image := c.Values["image"]; image != nil {
+		imageMap, ok := image.(map[string]interface{})
+		if ok && imageMap["tag"] != nil {
+			imageMap["tag"] = c.Metadata.AppVersion
+		}
+	}
 }
